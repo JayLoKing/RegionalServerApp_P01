@@ -1,0 +1,33 @@
+{
+  "name": "RegionalServerApp_P01",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "rspack build",
+    "check": "biome check --write",
+    "format": "biome format --write",
+    "preview": "rspack preview",
+    "dev:ui": "rspack dev",
+    "dev:agent": "bun --watch agent/local-agent.ts",
+    "dev": "concurrently \"bun run dev:agent\" \"bun run dev:ui\""
+  },
+  "dependencies": {
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "systeminformation": "^5.31.1",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.8",
+    "@rspack/cli": "^1.7.6",
+    "@rspack/core": "^1.7.6",
+    "@rspack/plugin-react-refresh": "^1.6.0",
+    "@types/node": "^25.3.2",
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
+    "@types/ws": "^8.18.1",
+    "concurrently": "^9.2.1",
+    "react-refresh": "^0.18.0",
+    "typescript": "^5.9.3"
+  }
+}
