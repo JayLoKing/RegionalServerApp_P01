@@ -1,10 +1,11 @@
 import * as net from 'net';
 import * as si from 'systeminformation';
+import * as os from 'os';
 import { WebSocketServer } from 'ws';
 
 const CNS_SERVER_HOST = 'turntable.proxy.rlwy.net';
 const CNS_SERVER_PORT = 26080;
-const NODE_ID = 'CNS-CBBA-01';
+const NODE_ID = `CNS-${os.hostname()}$`;
 
 let refreshIntervalMs = 5000;
 let tcpClient = new net.Socket();
@@ -31,6 +32,8 @@ async function getDiskMetrics() {
 
     return { nodeId: NODE_ID, disks };
 }
+
+
 
 const wss = new WebSocketServer({ port: 4000 });
 let reactClient: any = null;
