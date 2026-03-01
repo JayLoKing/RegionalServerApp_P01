@@ -2,8 +2,8 @@ import * as net from 'net';
 import * as si from 'systeminformation';
 import { WebSocketServer } from 'ws';
 
-const CNS_SERVER_HOST = '127.0.0.1';
-const CNS_SERVER_PORT = 3001;
+const CNS_SERVER_HOST = 'turntable.proxy.rlwy.net';
+const CNS_SERVER_PORT = 26080;
 const NODE_ID = 'CNS-CBBA-01';
 
 let refreshIntervalMs = 5000;
@@ -50,18 +50,20 @@ wss.on('connection', (ws) => {
 });
 
 function connectToNestJS() {
+    // Añade este listener para que el script no se detenga por errores de red
+    tcpClient.on('error', (err) => {
+        console.error('❌ Error de conexión con Railway:', err.message);
+    });
+
     tcpClient.connect(CNS_SERVER_PORT, CNS_SERVER_HOST, () => {
         console.log('✅ Conectado al Servidor Central NestJS');
         restartReporting();
     });
 
-    tcpClient.on('data', (data) => {
-        const msg = data.toString().replace(/^[0-9]+#/, '');
-        console.log(`📥 Comando CNS: ${msg}`);
-        if (reactClient) reactClient.send(JSON.stringify({ type: 'CNS_COMMAND', payload: msg }));
+    tcpClient.on('close', () => {
+        console.log('🔌 Conexión perdida. Reintentando en 5s...');
+        setTimeout(connectToNestJS, 5000);
     });
-
-    tcpClient.on('close', () => setTimeout(connectToNestJS, 5000));
 }
 
 function restartReporting() {
