@@ -1,4 +1,5 @@
 import { RegionalNode } from "../regional-node/components/RegionalNode";
+import { ClusterDashboard } from "../cluster-dashboard/components/ClusterDashboard";
 
 export const routesConfig = [
     {
@@ -6,7 +7,7 @@ export const routesConfig = [
         element: <RegionalNode />
     },
     {
-        path: 'dashboard',
-        element: '<Aqui el componente del dashboard y charts>'
+        path: '/dashboard',
+        element: <ClusterDashboard/>
     }
 ];
