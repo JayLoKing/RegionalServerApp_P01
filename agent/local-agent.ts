@@ -3,8 +3,8 @@ import * as si from 'systeminformation';
 import * as os from 'os';
 import { WebSocketServer } from 'ws';
 
-const CNS_SERVER_HOST = 'turntable.proxy.rlwy.net';
-const CNS_SERVER_PORT = 26080;
+const CNS_SERVER_HOST = '127.0.0.1';
+const CNS_SERVER_PORT = 3001;
 const NODE_ID = `CNS-${os.hostname()}$`;
 
 let refreshIntervalMs = 5000;
