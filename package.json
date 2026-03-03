@@ -9,7 +9,7 @@
     "preview": "rspack preview",
     "dev:ui": "rspack dev",
     "dev:agent": "bun --watch agent/local-agent.ts",
-    "dev": "concurrently \"bun run dev:agent\" \"bun run dev:ui\""
+    "dev": "bun dev.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",
@@ -31,6 +31,7 @@
     "@rspack/cli": "^1.7.6",
     "@rspack/core": "^1.7.6",
     "@rspack/plugin-react-refresh": "^1.6.0",
+    "@types/bun": "^1.3.10",
     "@types/node": "^25.3.2",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
