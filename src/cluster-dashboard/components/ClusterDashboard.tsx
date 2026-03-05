@@ -72,7 +72,25 @@ const generateHistoricalData = (nodeId: string) => {
   }
   return data;
 };
+const getTimeSinceLastReport = (lastReport: Date) => {
+    if (!lastReport || lastReport.getTime() === 0) return "Nunca";
 
+    const seconds = Math.floor(
+        (new Date().getTime() - lastReport.getTime()) / 1000,
+    );
+
+    if (seconds < 5) return "ahora mismo";
+    if (seconds < 60) return `hace ${seconds} segundos`;
+    
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `hace ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
+    
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `hace ${hours} hora${hours !== 1 ? 's' : ''}`;
+    
+    const days = Math.floor(hours / 24);
+    return `hace ${days} día${days !== 1 ? 's' : ''}`;
+};
 export const ClusterDashboard = () => {
   const [summary, setSummary] = useState<ClusterSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -160,11 +178,11 @@ export const ClusterDashboard = () => {
         });
 
         // Ordenar por fecha ascendente para el gráfico
-           formattedData.sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime());
-      setHistoricalData(formattedData);
-    }
-
-    
+        formattedData.sort(
+          (a, b) => a.fullDate.getTime() - b.fullDate.getTime(),
+        );
+        setHistoricalData(formattedData);
+      }
     } catch (error) {
       console.error("Error cargando historial:", error);
       setHistoricalData(generateHistoricalData(node.nodeId));
@@ -448,8 +466,42 @@ export const ClusterDashboard = () => {
                       </div>
                     )}
 
-                    <div className="mt-3 text-xs text-slate-500 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
+                    {/* Después - Reemplazar con: */}
+                    <div className="mt-3 flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1 text-slate-500">
+                        <Clock className="w-3 h-3" />
+                        {getTimeSinceLastReport(node.lastReport)}
+                      </span>
+
+                      {/* Indicador de estado con color más visible */}
+                      <span
+                        className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
+                          node.diskStatus === "UP"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : node.diskStatus === "WARNING"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-rose-100 text-rose-700"
+                        }`}
+                      >
+                        {node.diskStatus === "UP" && (
+                          <Wifi className="w-3 h-3" />
+                        )}
+                        {node.diskStatus === "WARNING" && (
+                          <Activity className="w-3 h-3" />
+                        )}
+                        {node.diskStatus === "DOWN" && (
+                          <WifiOff className="w-3 h-3" />
+                        )}
+                        {node.diskStatus === "UP"
+                          ? "En línea"
+                          : node.diskStatus === "WARNING"
+                            ? "Crítico"
+                            : "Sin conexión"}
+                      </span>
+                    </div>
+
+                    {/* Opcional: Si quieres mostrar la fecha exacta al hacer hover */}
+                    <div className="mt-1 text-xs text-slate-400 opacity-0 hover:opacity-100 transition-opacity">
                       {formatDate(node.lastReport)}
                     </div>
                   </div>
