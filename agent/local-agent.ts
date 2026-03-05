@@ -57,10 +57,10 @@ function writeReporteToLog(metrics: any) {
     try {
         const reportesLogPath = getReportesLogPath();
         const timestamp = new Date().toISOString();
-        
+
         // Formatear la información del disco de manera legible
         const disk = metrics.disks[0];
-        
+
         const logEntry = [
             `[${timestamp}] REPORTE DE MÉTRICAS`,
             `  Nodo ID: ${metrics.nodeId}`,
@@ -73,9 +73,9 @@ function writeReporteToLog(metrics: any) {
             `  IOPS: ${disk.diskIOPS}`,
             `  ${'-'.repeat(50)}\n`
         ].join('\n');
-        
+
         fs.appendFileSync(reportesLogPath, logEntry);
-        console.log('📊 Reporte guardado en log:', reportesLogPath);
+        //console.log('📊 Reporte guardado en log:', reportesLogPath);
     } catch (error) {
         console.error('❌ Error escribiendo reporte al log:', error);
     }
@@ -96,7 +96,7 @@ async function getDiskMetrics() {
 
     const fs_ = fsSize[0];
     const disk = diskLayout[0] || { type: 'HDD' };
-    
+
     const totalGB = fs_.size / (1024 ** 3);
     const usedGB = fs_.used / (1024 ** 3);
 
@@ -106,12 +106,15 @@ async function getDiskMetrics() {
         diskSize: parseFloat(totalGB.toFixed(2)),
         diskUsedSpace: parseFloat(usedGB.toFixed(2)),
         diskFreeSpace: parseFloat((totalGB - usedGB).toFixed(2)),
-        diskIOPS: disk.type === 'SSD' ? 5000 : 150
+        diskIOPS: disk.type === 'SSD' ? 5000 : 150,
+        diskRegisterDate: new Date(),
+        diskLastUpdate: new Date()
     };
 
-    return { 
-        nodeId: NODE_ID, 
-        disks: [diskInfo]
+    return {
+        nodeId: NODE_ID,
+        disks: [diskInfo],
+        clientTimestamp: new Date().toISOString()
     };
 }
 
@@ -150,53 +153,78 @@ function connectToNestJS() {
 
     tcpClient.connect(CNS_SERVER_PORT, CNS_SERVER_HOST, () => {
         console.log('✅ Conectado al Servidor Central NestJS');
-        
+
         // Escribir en log cuando se conecta
         writeComandoToLog('CONEXION_ESTABLECIDA', `Conectado a ${CNS_SERVER_HOST}:${CNS_SERVER_PORT}`);
-        
+
         restartReporting();
     });
 
     tcpClient.on('data', (data) => {
         try {
             const messageStr = data.toString();
-            console.log('📨 Mensaje recibido del servidor:', messageStr);
-            
-            const payloadStart = messageStr.indexOf('#') + 1;
-            if (payloadStart > 0) {
-                const payloadStr = messageStr.substring(payloadStart);
-                const payload = JSON.parse(payloadStr);
-                
+            // 1. Vemos exactamente qué llega por el socket
+
+
+            // 2. NestJS envía: "longitud#{"response":{...}}"
+            // Buscamos el inicio real del objeto JSON ignorando los números y el '#'
+            const jsonStartIndex = messageStr.indexOf('{');
+
+            if (jsonStartIndex !== -1) {
+                const jsonStr = messageStr.substring(jsonStartIndex);
+                const payload = JSON.parse(jsonStr);
+                // 3. Verificamos que tenga la estructura que enviaste desde tu Controlador NestJS
                 if (payload.response) {
-                    const serverCommand = payload.response.command || 'NO_COMMAND';
-                    const serverStatus = payload.response.status || 'UNKNOWN';
-                    
-                    // Guardar en archivo de log de comandos
+                    const serverCommand = payload.response.response.command || 'NO_COMMAND';
+                    const serverStatus = payload.response.response.status || 'UNKNOWN';
+                    const timestamp = payload.response.response.timestamp || 'N/A';
+
+
+
+                    // 4. Guardar en tu archivo comandos_servidor.log
                     writeComandoToLog(
-                        serverCommand, 
-                        `Status=${serverStatus}, Timestamp=${payload.response.timestamp || 'N/A'}`
+                        serverCommand,
+                        `Status=${serverStatus}, Timestamp=${timestamp}`
                     );
-                    
-                    // Enviar a la interfaz React si está conectada
+
+                    // 5. Enviar a tu interfaz React
                     if (reactClient) {
-                        reactClient.send(JSON.stringify({ 
-                            type: 'CNS_COMMAND', 
-                            payload: payloadStr 
+                        reactClient.send(JSON.stringify({
+                            type: 'CNS_COMMAND',
+                            payload: JSON.stringify(payload.response.response.command) // Enviamos solo la parte útil
                         }));
                     }
-                    
+                    console.log(serverCommand)
+                    const ackObj = {
+                        pattern: 'client_ack', // Patrón exclusivo para confirmaciones
+                        data: {
+                            nodeId: NODE_ID,
+                            receivedCommand: serverCommand,
+                            status: 'ACK_OK',
+                            timestamp: new Date().toISOString()
+                        }
+                        // OJO: NO le ponemos "id" aquí para que el servidor 
+                        // no intente responder a esta confirmación.
+                    };
+
+                    const ackPayload = JSON.stringify(ackObj);
+                    tcpClient.write(`${ackPayload.length}#${ackPayload}`);
+                    console.log(`📤 Confirmación ACKOK enviada al Servidor Central.`);
+
+                    // 6. Validaciones específicas
                     if (serverCommand === 'DISCONNECT') {
-                        console.log('⚠️ El servidor nos ha desconectado. Cerrando...');
+                        console.log('⚠️ El servidor rechazó la conexión. Cerrando...');
                         tcpClient.destroy();
                         process.exit(1);
                     }
                 }
+            } else {
+                console.log('⚠️ Se recibió data, pero no contiene un JSON válido.');
             }
         } catch (error) {
-            console.error('Error procesando mensaje del servidor:', error);
+            console.error('❌ Error procesando el mensaje del servidor:', error);
         }
     });
-
     tcpClient.on('close', () => {
         console.log('🔌 Conexión perdida. Reintentando en 5s...');
         writeComandoToLog('CONEXION_PERDIDA', 'Reintentando en 5 segundos');
@@ -207,15 +235,20 @@ function connectToNestJS() {
 
 function restartReporting() {
     if (intervalTimer) clearInterval(intervalTimer);
-    
+
     intervalTimer = setInterval(async () => {
         try {
             const metrics = await getDiskMetrics();
-            
-            // GUARDAR EL REPORTE EN EL LOG ANTES DE ENVIARLO
             writeReporteToLog(metrics);
-            
-            const payload = JSON.stringify({ pattern: 'report_metrics', data: metrics });
+
+
+            const messageObj = {
+                pattern: 'report_metrics',
+                data: metrics,
+                id: Date.now().toString()
+            };
+
+            const payload = JSON.stringify(messageObj);
             tcpClient.write(`${payload.length}#${payload}`);
 
             if (reactClient) {
@@ -225,9 +258,8 @@ function restartReporting() {
             console.error('Error enviando métricas:', error);
         }
     }, refreshIntervalMs);
-    
-    console.log(`📊 Reporte de métricas iniciado con intervalo de ${refreshIntervalMs}ms`);
-    writeComandoToLog('REPORTE_INICIADO', `Intervalo: ${refreshIntervalMs}ms`);
+
+    console.log(`📊 Reporte de métricas iniciado...`);
 }
 
 // Iniciar conexión

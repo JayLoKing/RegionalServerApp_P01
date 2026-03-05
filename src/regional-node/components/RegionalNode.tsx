@@ -17,11 +17,32 @@ export const RegionalNode = () => {
 
         localWs.onmessage = (event) => {
             const data = JSON.parse(event.data);
+
             if (data.type === 'METRICS_UPDATE') {
                 setMetrics(data.payload);
-            } else if (data.type === 'CNS_COMMAND') {
-                const parsedCmd = JSON.parse(data.payload);
-                setCnsCommand(parsedCmd.response.command);
+            }
+
+            if (data.type === 'CNS_COMMAND') {
+                try {
+                    // Limpiamos el payload por si viene con comillas extra
+                    let rawCommand = data.payload;
+                    if (typeof rawCommand === 'string' && rawCommand.startsWith('"') && rawCommand.endsWith('"')) {
+                        rawCommand = JSON.parse(rawCommand);
+                    }
+
+                    const commandString = String(rawCommand);
+                    console.log("Comando recibido en React:", commandString);
+
+                    // Si el servidor dice que todo está bien (ACK o NONE), ocultamos la alerta
+                    if (commandString === 'ACK' || commandString === 'NONE') {
+                        setCnsCommand(''); // Limpiamos el estado
+                    } else {
+                        // Si es una alerta real (WARNING o ERROR), la mostramos
+                        setCnsCommand(commandString);
+                    }
+                } catch (e) {
+                    setCnsCommand(String(data.payload));
+                }
             }
         };
 
@@ -32,7 +53,7 @@ export const RegionalNode = () => {
     const handleIntervalChange = () => {
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'CHANGE_INTERVAL', value: intervalValue }));
-            
+
             // Toast personalizado
             const toast = document.createElement('div');
             toast.className = 'fixed top-4 right-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-2xl shadow-2xl z-50 flex items-center space-x-3 animate-slide-in';
@@ -65,10 +86,10 @@ export const RegionalNode = () => {
                             </div>
                         </div>
                     </div>
-                    
+
                     <h2 className="text-2xl font-bold text-white mt-8 mb-2">Conectando al Nodo Regional</h2>
                     <p className="text-white/60">Estableciendo canal seguro de comunicación...</p>
-                    
+
                     {/* Barras de progreso decorativas */}
                     <div className="flex gap-1 justify-center mt-8">
                         {[...Array(5)].map((_, i) => (
@@ -121,7 +142,7 @@ export const RegionalNode = () => {
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* Estadísticas rápidas */}
                         <div className="flex gap-3">
                             <div className="backdrop-blur-lg bg-white/5 rounded-xl px-4 py-2 border border-white/10">
@@ -137,7 +158,8 @@ export const RegionalNode = () => {
                 </div>
 
                 {/* Alerta CNS */}
-                {cnsCommand !== 'NONE' && (
+                {/* Si cnsCommand tiene texto (es decir, no está vacío) mostramos la alerta */}
+                {cnsCommand && (
                     <div className="backdrop-blur-xl bg-red-500/20 border border-red-500/30 rounded-2xl p-4 animate-slide-in">
                         <div className="flex items-center space-x-4">
                             <div className="w-12 h-12 bg-red-500/30 rounded-xl flex items-center justify-center backdrop-blur-lg">
@@ -147,7 +169,7 @@ export const RegionalNode = () => {
                                 <p className="text-red-200 text-sm font-medium">ALERTA DEL SERVIDOR CENTRAL</p>
                                 <p className="text-white text-lg font-semibold">{cnsCommand}</p>
                             </div>
-                            <div className="text-red-200 text-sm bg-red-500/30 px-3 py-1 rounded-full">
+                            <div className="text-red-200 text-sm bg-red-500/30 px-3 py-1 rounded-full animate-pulse">
                                 URGENTE
                             </div>
                         </div>
@@ -166,7 +188,7 @@ export const RegionalNode = () => {
                                 <p className="text-white/40 text-sm">Configura el intervalo de actualización</p>
                             </div>
                         </div>
-                        
+
                         <div className="flex-1 flex flex-wrap gap-3">
                             <div className="flex-1 relative">
                                 <input
@@ -180,7 +202,7 @@ export const RegionalNode = () => {
                                     ms
                                 </span>
                             </div>
-                            
+
                             <button
                                 onClick={handleIntervalChange}
                                 className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-xl shadow-lg transform transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500/50 flex items-center space-x-2"
@@ -216,11 +238,10 @@ export const RegionalNode = () => {
                                     className="group backdrop-blur-xl bg-white/10 rounded-3xl shadow-2xl overflow-hidden border border-white/20 transform transition duration-500 hover:scale-105 hover:shadow-2xl"
                                 >
                                     {/* Cabecera con efecto de brillo */}
-                                    <div className={`relative h-2 ${
-                                        isCritical ? 'bg-gradient-to-r from-red-500 to-pink-500' :
+                                    <div className={`relative h-2 ${isCritical ? 'bg-gradient-to-r from-red-500 to-pink-500' :
                                         isWarning ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
-                                        'bg-gradient-to-r from-green-500 to-emerald-500'
-                                    }`}>
+                                            'bg-gradient-to-r from-green-500 to-emerald-500'
+                                        }`}>
                                         <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
                                     </div>
 
@@ -236,11 +257,10 @@ export const RegionalNode = () => {
                                                     <p className="text-white/40 text-sm">{disk.diskType}</p>
                                                 </div>
                                             </div>
-                                            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                                disk.diskType === 'SSD' 
-                                                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                                                    : 'bg-gray-500/20 text-gray-300 border border-gray-500/30'
-                                            }`}>
+                                            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${disk.diskType === 'SSD'
+                                                ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                                : 'bg-gray-500/20 text-gray-300 border border-gray-500/30'
+                                                }`}>
                                                 {disk.diskType}
                                             </div>
                                         </div>
@@ -266,22 +286,20 @@ export const RegionalNode = () => {
                                         <div className="space-y-2">
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-white/60">Uso del disco</span>
-                                                <span className={`font-bold ${
-                                                    isCritical ? 'text-red-400' :
+                                                <span className={`font-bold ${isCritical ? 'text-red-400' :
                                                     isWarning ? 'text-yellow-400' :
-                                                    'text-green-400'
-                                                }`}>
+                                                        'text-green-400'
+                                                    }`}>
                                                     {usagePercent.toFixed(1)}%
                                                 </span>
                                             </div>
-                                            
+
                                             <div className="relative h-3 bg-white/5 rounded-full overflow-hidden">
                                                 <div
-                                                    className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out ${
-                                                        isCritical ? 'bg-gradient-to-r from-red-500 to-pink-500' :
+                                                    className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out ${isCritical ? 'bg-gradient-to-r from-red-500 to-pink-500' :
                                                         isWarning ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
-                                                        'bg-gradient-to-r from-green-500 to-emerald-500'
-                                                    }`}
+                                                            'bg-gradient-to-r from-green-500 to-emerald-500'
+                                                        }`}
                                                     style={{ width: `${usagePercent}%` }}
                                                 >
                                                     <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
