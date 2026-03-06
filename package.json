@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "build": "rspack build",
+    "start": "bun run server.ts",
     "check": "biome check --write",
     "format": "biome format --write",
     "preview": "rspack preview",
