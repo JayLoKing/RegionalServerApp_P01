@@ -13,6 +13,7 @@ export const RegionalNode = () => {
 
     const localWsRef = useRef<WebSocket | null>(null);
     const cloudSocketRef = useRef<Socket | null>(null);
+    const identifiedNodeId = useRef<string | null>(null);
 
     // Ajusta estas URLs según tu entorno de Railway
     const CLOUD_URL = 'https://mainserverappp01-production.up.railway.app';
@@ -24,33 +25,67 @@ export const RegionalNode = () => {
     }, []);
 
     useEffect(() => {
-        // --- CONEXIÓN LOCAL (Prioridad Tiempo Real) ---
+        // --- 1. CONEXIÓN CLOUD (Socket.io) ---
+        const cloudSocket = io(CLOUD_URL, {
+            transports: ['websocket'],
+            reconnection: true
+        });
+        cloudSocketRef.current = cloudSocket;
+
+        cloudSocket.on('connect', () => setCloudConnected(true));
+        cloudSocket.on('disconnect', () => setCloudConnected(false));
+
+        // CANAL DE DESCUBRIMIENTO: Escuchamos quién está reportando
+        cloudSocket.on('discovery_ping', (data) => {
+            // Si el dashboard no tiene ID aún, adoptamos el primero que llegue
+            if (!identifiedNodeId.current && data.nodeId) {
+                console.log("🚀 Nodo descubierto automáticamente:", data.nodeId);
+                subscribeToPrivateChannel(data.nodeId);
+            }
+        });
+
+        const subscribeToPrivateChannel = (nodeId: string) => {
+            identifiedNodeId.current = nodeId;
+            // Escuchamos el canal privado que creamos en el Gateway
+            cloudSocket.on(`metrics_update_${nodeId}`, (data) => {
+                setMetrics(data);
+            });
+            // Escuchamos comandos privados
+            cloudSocket.on(`command_${nodeId}`, (cmd) => {
+                handleCommand(cmd);
+            });
+        };
+
+        // --- 2. CONEXIÓN LOCAL (Prioridad) ---
         const connectLocal = () => {
             const ws = new WebSocket(LOCAL_WS_URL);
-            ws.onopen = () => setLocalConnected(true);
+
+            ws.onopen = () => {
+                setLocalConnected(true);
+                console.log("✅ Conectado al Agente Local");
+            };
+
             ws.onclose = () => {
                 setLocalConnected(false);
                 setTimeout(connectLocal, 5000);
             };
+
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                if (data.type === 'METRICS_UPDATE') setMetrics(data.payload);
+                if (data.type === 'METRICS_UPDATE') {
+                    // Si el local conecta, forzamos la suscripción cloud con ese ID
+                    if (!identifiedNodeId.current) {
+                        subscribeToPrivateChannel(data.payload.nodeId);
+                    }
+                    setMetrics(data.payload);
+                }
                 if (data.type === 'CNS_COMMAND') handleCommand(data.payload);
             };
             localWsRef.current = ws;
         };
 
-        // --- CONEXIÓN CLOUD (Socket.io Segura) ---
-        const cloudSocket = io(CLOUD_URL, { transports: ['websocket'] });
-        cloudSocket.on('connect', () => setCloudConnected(true));
-        cloudSocket.on('disconnect', () => setCloudConnected(false));
-        cloudSocket.on('metrics_global', (data) => {
-            // Si no hay métricas o vienen de este nodo, actualizamos
-            if (!metrics || data.nodeId === metrics.nodeId) setMetrics(data);
-        });
-        cloudSocketRef.current = cloudSocket;
-
         connectLocal();
+
         return () => {
             localWsRef.current?.close();
             cloudSocket.disconnect();
