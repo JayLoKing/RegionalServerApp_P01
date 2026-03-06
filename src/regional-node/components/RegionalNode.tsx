@@ -16,7 +16,7 @@ export const RegionalNode = () => {
 
     // Ajusta estas URLs según tu entorno de Railway
     const CLOUD_URL = 'https://mainserverappp01-production.up.railway.app';
-    const LOCAL_WS_URL = 'ws://localhost:4000';
+    const LOCAL_WS_URL = 'ws://127.0.0.1:4000';
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
