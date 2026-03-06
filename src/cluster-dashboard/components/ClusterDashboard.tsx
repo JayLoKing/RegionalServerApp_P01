@@ -53,8 +53,6 @@ interface ClusterSummary {
   lastUpdated: Date;
 }
 
-// Datos de ejemplo para el historial (esto debería venir del backend)
-// Datos de ejemplo para el historial (fallback)
 const generateHistoricalData = (nodeId: string) => {
   const data = [];
   const today = new Date();
@@ -73,23 +71,23 @@ const generateHistoricalData = (nodeId: string) => {
   return data;
 };
 const getTimeSinceLastReport = (lastReport: Date) => {
-    if (!lastReport || lastReport.getTime() === 0) return "Nunca";
+  if (!lastReport || lastReport.getTime() === 0) return "Nunca";
 
-    const seconds = Math.floor(
-        (new Date().getTime() - lastReport.getTime()) / 1000,
-    );
+  const seconds = Math.floor(
+    (new Date().getTime() - lastReport.getTime()) / 1000,
+  );
 
-    if (seconds < 5) return "ahora mismo";
-    if (seconds < 60) return `hace ${seconds} segundos`;
-    
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `hace ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
-    
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `hace ${hours} hora${hours !== 1 ? 's' : ''}`;
-    
-    const days = Math.floor(hours / 24);
-    return `hace ${days} día${days !== 1 ? 's' : ''}`;
+  if (seconds < 5) return "ahora mismo";
+  if (seconds < 60) return `hace ${seconds} segundos`;
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `hace ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `hace ${hours} hora${hours !== 1 ? 's' : ''}`;
+
+  const days = Math.floor(hours / 24);
+  return `hace ${days} día${days !== 1 ? 's' : ''}`;
 };
 export const ClusterDashboard = () => {
   const [summary, setSummary] = useState<ClusterSummary | null>(null);
@@ -281,11 +279,10 @@ export const ClusterDashboard = () => {
               <div className="flex items-center gap-2 bg-white/10 rounded-lg p-1 border border-white/20">
                 <button
                   onClick={() => setAutoRefresh(!autoRefresh)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    autoRefresh
-                      ? "bg-blue-600 text-white shadow-md"
-                      : "text-slate-300 hover:bg-white/20"
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${autoRefresh
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "text-slate-300 hover:bg-white/20"
+                    }`}
                 >
                   Auto
                 </button>
@@ -448,13 +445,12 @@ export const ClusterDashboard = () => {
                           <div className="overflow-hidden h-2 text-xs flex rounded bg-slate-200">
                             <div
                               style={{ width: `${node.usagePercentage}%` }}
-                              className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${
-                                node.usagePercentage > 90
-                                  ? "bg-rose-500"
-                                  : node.usagePercentage > 75
-                                    ? "bg-amber-500"
-                                    : "bg-emerald-500"
-                              }`}
+                              className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${node.usagePercentage > 90
+                                ? "bg-rose-500"
+                                : node.usagePercentage > 75
+                                  ? "bg-amber-500"
+                                  : "bg-emerald-500"
+                                }`}
                             ></div>
                           </div>
                         </div>
@@ -475,13 +471,12 @@ export const ClusterDashboard = () => {
 
                       {/* Indicador de estado con color más visible */}
                       <span
-                        className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
-                          node.diskStatus === "UP"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : node.diskStatus === "WARNING"
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-rose-100 text-rose-700"
-                        }`}
+                        className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${node.diskStatus === "UP"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : node.diskStatus === "WARNING"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-rose-100 text-rose-700"
+                          }`}
                       >
                         {node.diskStatus === "UP" && (
                           <Wifi className="w-3 h-3" />
@@ -569,42 +564,24 @@ export const ClusterDashboard = () => {
               <div className="bg-slate-50 p-6 rounded-xl">
                 <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-blue-600" />
-                  Tendencia de uso (GB)
+                  Tendencia de uso histórico
                 </h3>
                 <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={historicalData}>
-                      <defs>
-                        <linearGradient
-                          id="colorUsage"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor="#3b82f6"
-                            stopOpacity={0.3}
-                          />
-                          <stop
-                            offset="95%"
-                            stopColor="#3b82f6"
-                            stopOpacity={0}
-                          />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <LineChart data={historicalData} margin={{ top: 10, right: 30, bottom: 20, left: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                       <XAxis
                         dataKey="date"
                         stroke="#64748b"
                         tick={{ fill: "#64748b", fontSize: 12 }}
+                        tickMargin={15}
                       />
+                      {/* Eliminamos el domain={[0, 100]} para que se autoescale a discos de cualquier tamaño (ej. 800 GB) */}
                       <YAxis
                         stroke="#64748b"
                         tick={{ fill: "#64748b", fontSize: 12 }}
-                        domain={[0, 100]}
-                        unit="GB"
+                        tickFormatter={(value) => `${value} GB`}
+                        width={80}
                       />
                       <Tooltip
                         contentStyle={{
@@ -613,16 +590,23 @@ export const ClusterDashboard = () => {
                           borderRadius: "8px",
                           boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                         }}
+                        formatter={(value: number | undefined) => {
+                          // Si por alguna razón Recharts manda un undefined, devolvemos 0
+                          if (value === undefined) return ["0.00 GB", "Espacio Usado"];
+                          // Si es un número válido, lo formateamos a 2 decimales
+                          return [`${value.toFixed(2)} GB`, "Espacio Usado"];
+                        }}
                       />
-                      <Area
+                      <Line
                         type="monotone"
                         dataKey="usage"
-                        stroke="#3b82f6"
-                        strokeWidth={2}
-                        fill="url(#colorUsage)"
+                        stroke="#1d4ed8" // Azul oscuro similar a tu imagen
+                        strokeWidth={3}
+                        dot={{ r: 4, fill: "white", stroke: "#1d4ed8", strokeWidth: 2 }} // Puntos blancos con borde azul
+                        activeDot={{ r: 6, fill: "#1d4ed8", stroke: "white" }}
                         name="Uso (GB)"
                       />
-                    </AreaChart>
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>

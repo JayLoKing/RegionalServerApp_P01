@@ -5,8 +5,8 @@ import { WebSocketServer } from 'ws';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const CNS_SERVER_HOST = '127.0.0.1';
-const CNS_SERVER_PORT = 3001;
+const CNS_SERVER_HOST = 'gondola.proxy.rlwy.net';
+const CNS_SERVER_PORT = 56212;
 const NODE_ID = `CNS-${os.hostname()}`;
 
 let refreshIntervalMs = 5000;
