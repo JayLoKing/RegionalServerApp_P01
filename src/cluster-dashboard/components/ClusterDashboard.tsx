@@ -103,7 +103,7 @@ export const ClusterDashboard = () => {
   const fetchSummary = async () => {
     setIsRefreshing(true);
     try {
-      const response = await fetch("http://localhost:3000/api/cluster/summary");
+      const response = await fetch("https://mainserverappp01-production.up.railway.app/api/cluster/summary");
       if (!response.ok) throw new Error("Error al cargar datos");
       const data = await response.json();
 
@@ -146,7 +146,7 @@ export const ClusterDashboard = () => {
     try {
       // Llamar al backend para obtener el historial real
       const response = await fetch(
-        `http://localhost:3000/api/cluster/history/${node.nodeId}`,
+        `https://mainserverappp01-production.up.railway.app/api/cluster/history/${node.nodeId}`,
       );
       if (response.ok) {
         const data = await response.json();
