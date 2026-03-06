@@ -15,7 +15,7 @@ export const RegionalNode = () => {
     const cloudSocketRef = useRef<Socket | null>(null);
 
     // Ajusta estas URLs según tu entorno de Railway
-    const CLOUD_URL = 'https://tu-backend-railway.app';
+    const CLOUD_URL = 'https://mainserverappp01-production.up.railway.app';
     const LOCAL_WS_URL = 'ws://localhost:4000';
 
     useEffect(() => {
