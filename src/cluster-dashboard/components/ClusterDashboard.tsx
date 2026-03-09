@@ -140,7 +140,7 @@ const LogViewer = ({ onClose }: { onClose: () => void }) => {
 
   const fetchFiles = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/logs/list");
+      const res = await fetch("https://mainserverappp01-production.up.railway.app/api/logs/list");
       const data = await res.json();
       setFiles(data.files ?? []);
       if (data.files?.length > 0 && !selectedFileRef.current) {
@@ -158,7 +158,7 @@ const LogViewer = ({ onClose }: { onClose: () => void }) => {
     if (!silent) setLoadingContent(true);
     try {
       const res = await fetch(
-        `http://localhost:3000/api/logs/content?file=${encodeURIComponent(fileName)}&lines=200`
+        `https://mainserverappp01-production.up.railway.app/api/logs/content?file=${encodeURIComponent(fileName)}&lines=200`
       );
       const data = await res.json();
       setContent(data);
@@ -377,7 +377,7 @@ export const ClusterDashboard = () => {
   const fetchSummary = async () => {
     setIsRefreshing(true);
     try {
-      const response = await fetch("http://localhost:3000/api/cluster/summary");
+      const response = await fetch("https://mainserverappp01-production.up.railway.app/api/cluster/summary");
       if (!response.ok) throw new Error("Error al cargar datos");
       const data = await response.json();
       setSummary({
@@ -409,7 +409,7 @@ export const ClusterDashboard = () => {
   const handleNodeClick = async (node: NodeDisk) => {
     setSelectedNode(node);
     try {
-      const response = await fetch(`http://localhost:3000/api/cluster/history/${node.nodeId}`);
+      const response = await fetch(`https://mainserverappp01-production.up.railway.app/api/cluster/history/${node.nodeId}`);
       if (response.ok) {
         const data = await response.json();
         interface FormattedHistoryData { date: string; usage: number; fullDate: Date; }

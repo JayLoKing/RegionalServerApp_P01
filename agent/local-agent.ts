@@ -6,8 +6,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // Cambia esto según tu entorno
-const CNS_SERVER_HOST = '127.0.0.1';
-const CNS_SERVER_PORT = 3001; // Asegúrate de que este es el puerto TCP de NestJS
+const CNS_SERVER_HOST = 'gondola.proxy.rlwy.net';
+const CNS_SERVER_PORT = 56212; // Asegúrate de que este es el puerto TCP de NestJS
 const NODE_ID = `CNS-${os.hostname()}`;
 
 let refreshIntervalMs = 5000;
