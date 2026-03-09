@@ -251,11 +251,10 @@ const LogViewer = ({ onClose }: { onClose: () => void }) => {
                     <button
                       key={file.name}
                       onClick={() => setSelectedFile(file.name)}
-                      className={`w-full text-left p-3 rounded-xl transition-all ${
-                        isSelected
-                          ? "bg-blue-600/20 border border-blue-500/40"
-                          : "hover:bg-slate-800 border border-transparent"
-                      }`}
+                      className={`w-full text-left p-3 rounded-xl transition-all ${isSelected
+                        ? "bg-blue-600/20 border border-blue-500/40"
+                        : "hover:bg-slate-800 border border-transparent"
+                        }`}
                     >
                       <div className="flex items-center justify-between mb-1.5">
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-md border font-medium ${color}`}>
@@ -557,7 +556,7 @@ export const ClusterDashboard = () => {
                     <p className="text-sm opacity-75 flex items-center justify-center gap-1">
                       <Zap className="w-3 h-3" /> Latencia
                     </p>
-                    <p className="text-xl font-semibold">{summary.avgLatencyMs.toFixed(3)} ms</p>
+                    <p className="text-xl font-semibold">{(summary.avgLatencyMs || 0).toFixed(3)} ms</p>
                   </div>
                   <div>
                     <p className="text-sm opacity-75 flex items-center justify-center gap-1">
@@ -565,7 +564,7 @@ export const ClusterDashboard = () => {
                     </p>
                     <p className={`text-xl font-semibold ${summary.globalGrowthRateGBPerDay > 0 ? "text-rose-300" : "text-emerald-300"}`}>
                       {summary.globalGrowthRateGBPerDay > 0 ? "+" : ""}
-                      {summary.globalGrowthRateGBPerDay.toFixed(2)} GB/día
+                      {(summary.globalGrowthRateGBPerDay || 0).toFixed(2)} GB/día
                     </p>
                   </div>
                 </div>
@@ -656,10 +655,9 @@ export const ClusterDashboard = () => {
                           <div className="overflow-hidden h-2 text-xs flex rounded bg-slate-200">
                             <div
                               style={{ width: `${node.usagePercentage}%` }}
-                              className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${
-                                node.usagePercentage > 90 ? "bg-rose-500" :
+                              className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${node.usagePercentage > 90 ? "bg-rose-500" :
                                 node.usagePercentage > 75 ? "bg-amber-500" : "bg-emerald-500"
-                              }`}
+                                }`}
                             />
                           </div>
                         </div>
@@ -676,11 +674,10 @@ export const ClusterDashboard = () => {
                         <Clock className="w-3 h-3" />
                         {getTimeSinceLastReport(node.lastReport)}
                       </span>
-                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
-                        node.diskStatus === "UP" ? "bg-emerald-100 text-emerald-700" :
+                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${node.diskStatus === "UP" ? "bg-emerald-100 text-emerald-700" :
                         node.diskStatus === "WARNING" ? "bg-amber-100 text-amber-700" :
-                        "bg-rose-100 text-rose-700"
-                      }`}>
+                          "bg-rose-100 text-rose-700"
+                        }`}>
                         {node.diskStatus === "UP" && <Wifi className="w-3 h-3" />}
                         {node.diskStatus === "WARNING" && <Activity className="w-3 h-3" />}
                         {node.diskStatus === "DOWN" && <WifiOff className="w-3 h-3" />}
